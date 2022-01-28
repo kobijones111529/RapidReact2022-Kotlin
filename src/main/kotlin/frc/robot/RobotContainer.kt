@@ -1,5 +1,5 @@
 package frc.robot
 
-class RobotContainer {
+class RobotContainer() {
 
 }
