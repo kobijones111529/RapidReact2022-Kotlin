@@ -4,6 +4,7 @@ import edu.wpi.first.wpilibj.DoubleSolenoid.Value
 import edu.wpi.first.wpilibj.PneumaticsModuleType
 import frc.robot.subsystems.Magazine
 import frc.robot.subsystems.physical.PhysicalDrivetrain
+import frc.robot.subsystems.physical.PhysicalIntake
 import frc.robot.subsystems.physical.PhysicalMagazine
 import frc.robot.subsystems.physical.PhysicalShooter
 import frc.robot.utils.FeedforwardData
@@ -15,13 +16,19 @@ import tech.units.indriya.quantity.Quantities
  * Constant properties and configuration data for the robot
  */
 object Constants {
+  // Config
+  const val INTAKE_RUN_SPEED = 1.0
+  const val MAGAZINE_RUN_SPEED = 1.0
+  const val SHOOTER_RUN_SPEED = 1.0
+
   // CAN
   private const val DRIVE_FRONT_LEFT_ID = 1
   private const val DRIVE_FRONT_RIGHT_ID = 2
   private const val DRIVE_BACK_LEFT_ID = 3
   private const val DRIVE_BACK_RIGHT_ID = 4
-  private const val MAGAZINE_MOTOR_ID = 5
-  private const val SHOOTER_MOTOR_ID = 6
+  private const val INTAKE_MOTOR_ID = 5
+  private const val MAGAZINE_MOTOR_ID = 6
+  private const val SHOOTER_MOTOR_ID = 7
 
   // DIO
   private const val DRIVE_LEFT_ENCODER_CHANNEL_A = 0
@@ -31,8 +38,10 @@ object Constants {
 
   // Pneumatics
   private val PNEUMATICS_MODULE_TYPE = PneumaticsModuleType.CTREPCM
-  private const val DRIVE_SHIFT_FORWARD_CHANNEL = 0;
-  private const val DRIVE_SHIFT_REVERSE_CHANNEL = 1;
+  private const val DRIVE_SHIFT_FORWARD_CHANNEL = 0
+  private const val DRIVE_SHIFT_REVERSE_CHANNEL = 1
+  private const val INTAKE_EXTEND_FORWARD_CHANNEL = 2
+  private const val INTAKE_EXTEND_REVERSE_CHANNEL = 3
 
   /**
    * Drivetrain properties
@@ -54,6 +63,17 @@ object Constants {
     FeedforwardData(0.0, 0.0, 0.0),
     Quantities.getQuantity(0, SI.METRE),
     Quantities.getQuantity(0, SI.METRE)
+  )
+
+  /**
+   * Intake properties
+   */
+  val INTAKE_PROPERTIES: PhysicalIntake.Properties = PhysicalIntake.Properties(
+    INTAKE_MOTOR_ID,
+    PNEUMATICS_MODULE_TYPE,
+    INTAKE_EXTEND_FORWARD_CHANNEL,
+    INTAKE_EXTEND_REVERSE_CHANNEL,
+    Value.kForward
   )
 
   /**
