@@ -23,6 +23,10 @@ object Commands {
     return RunCommand({ drivetrain.arcadeDrive(move(), turn(), moveRateLimit(), turnRateLimit()) }, drivetrain)
   }
 
+  fun runMagazine(magazine: Magazine, output: () -> Double): Command {
+    return RunCommand({ magazine.setOutput(output()) }, magazine)
+  }
+
   fun shootFullAuto(
     magazine: Magazine,
     shooter: Shooter,

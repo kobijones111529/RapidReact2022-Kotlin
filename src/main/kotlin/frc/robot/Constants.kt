@@ -2,7 +2,9 @@ package frc.robot
 
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value
 import edu.wpi.first.wpilibj.PneumaticsModuleType
+import frc.robot.subsystems.Magazine
 import frc.robot.subsystems.physical.PhysicalDrivetrain
+import frc.robot.subsystems.physical.PhysicalMagazine
 import frc.robot.subsystems.physical.PhysicalShooter
 import frc.robot.utils.FeedforwardData
 import frc.robot.utils.PIDData
@@ -18,7 +20,8 @@ object Constants {
   private const val DRIVE_FRONT_RIGHT_ID = 2
   private const val DRIVE_BACK_LEFT_ID = 3
   private const val DRIVE_BACK_RIGHT_ID = 4
-  private const val SHOOTER_MOTOR_ID = 5
+  private const val MAGAZINE_MOTOR_ID = 5
+  private const val SHOOTER_MOTOR_ID = 6
 
   // DIO
   private const val DRIVE_LEFT_ENCODER_CHANNEL_A = 0
@@ -52,6 +55,11 @@ object Constants {
     Quantities.getQuantity(0, SI.METRE),
     Quantities.getQuantity(0, SI.METRE)
   )
+
+  /**
+   * Magazine properties
+   */
+  val MAGAZINE_PROPERTIES: PhysicalMagazine.Properties = PhysicalMagazine.Properties(MAGAZINE_MOTOR_ID)
 
   /**
    * Shooter properties
