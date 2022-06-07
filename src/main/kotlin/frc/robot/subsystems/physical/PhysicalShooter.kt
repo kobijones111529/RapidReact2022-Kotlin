@@ -6,8 +6,8 @@ import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX
 import edu.wpi.first.math.controller.SimpleMotorFeedforward
 import frc.robot.subsystems.Shooter
 import frc.robot.utils.CustomUnits
-import frc.robot.utils.FeedforwardData
-import frc.robot.utils.PIDData
+import frc.robot.utils.SimpleMotorFeedforwardConstants
+import frc.robot.utils.PIDConstants
 import frc.robot.utils.VariableSlewRateLimiter
 import si.uom.quantity.AngularAcceleration
 import si.uom.quantity.AngularSpeed
@@ -18,18 +18,37 @@ import javax.measure.Quantity
 class PhysicalShooter(private val properties: Properties) : Shooter {
   data class Properties(
     val motorID: Int,
-    val motorFeedforwardData: FeedforwardData,
-    val motorVelocityPIDData: PIDData,
     val encoderResolution: Int,
-    val encoderToOutputRatio: Double
+    val encoderToOutputRatio: Double,
+    var motorFeedforwardConstants: SimpleMotorFeedforwardConstants,
+    var motorVelocityPIDConstants: PIDConstants
   )
+
+  var feedforwardConstants: SimpleMotorFeedforwardConstants
+    get() = properties.motorFeedforwardConstants
+    set(value) {
+      if (value != properties.motorFeedforwardConstants) {
+        motorFeedforward = SimpleMotorFeedforward(value.s, value.v, value.a)
+        properties.motorFeedforwardConstants = value
+      }
+    }
+  var pidConstants: PIDConstants
+    get() = properties.motorVelocityPIDConstants
+    set(value) {
+      if (value != properties.motorVelocityPIDConstants) {
+        motor.config_kP(0, value.p)
+        motor.config_kI(0, value.i)
+        motor.config_kD(0, value.d)
+        properties.motorVelocityPIDConstants = value
+      }
+    }
 
   private val motor = WPI_TalonSRX(properties.motorID)
 
-  private val motorFeedforward = SimpleMotorFeedforward(
-    properties.motorFeedforwardData.s,
-    properties.motorFeedforwardData.v,
-    properties.motorFeedforwardData.a
+  private var motorFeedforward = SimpleMotorFeedforward(
+    properties.motorFeedforwardConstants.s,
+    properties.motorFeedforwardConstants.v,
+    properties.motorFeedforwardConstants.a
   )
 
   private val rateLimiter = VariableSlewRateLimiter()
@@ -44,9 +63,12 @@ class PhysicalShooter(private val properties: Properties) : Shooter {
 
     // The toRPM here is counterintuitive, but the PID gain units are technically inverse rpm,
     // so toRPM converts them to inverse sensorUnitsPer100Milliseconds
-    motor.config_kP(0, toRPM(properties.motorVelocityPIDData.p))
-    motor.config_kI(0, toRPM(properties.motorVelocityPIDData.i))
-    motor.config_kD(0, toRPM(properties.motorVelocityPIDData.d))
+    motor.config_kP(0, properties.motorVelocityPIDConstants.p)
+    motor.config_kI(0, properties.motorVelocityPIDConstants.i)
+    motor.config_kD(0, properties.motorVelocityPIDConstants.d)
+
+    // Consistent motor output for varying battery voltages
+    motor.enableVoltageCompensation(true)
   }
 
   override val speed: Quantity<AngularSpeed>
@@ -93,11 +115,9 @@ class PhysicalShooter(private val properties: Properties) : Shooter {
     motorOutput()
   }
 
-  private fun toRPM(sensorUnitsPer100Milliseconds: Double): Double {
-    return sensorUnitsPer100Milliseconds / properties.encoderResolution * 600 * properties.encoderToOutputRatio
-  }
-
-  private fun toSensorUnitsPer100Milliseconds(rpm: Double): Double {
-    return rpm / properties.encoderToOutputRatio / 600 * properties.encoderResolution
+  override fun updatePID(data: PIDConstants) {
+    motor.config_kP(0, data.p)
+    motor.config_kI(0, data.i)
+    motor.config_kD(0, data.d)
   }
 }

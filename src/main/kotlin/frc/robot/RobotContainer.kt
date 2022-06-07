@@ -1,59 +1,134 @@
 package frc.robot
 
+import edu.wpi.first.networktables.EntryListenerFlags
+import edu.wpi.first.networktables.EntryNotification
+import edu.wpi.first.networktables.NetworkTableInstance
 import edu.wpi.first.wpilibj2.command.Command
-import edu.wpi.first.wpilibj2.command.RunCommand
+import edu.wpi.first.wpilibj2.command.button.Button
 import edu.wpi.first.wpilibj2.command.button.Trigger
-import frc.robot.commands.ArcadeDriveCommand
-import frc.robot.commands.Commands
-import frc.robot.io.ControlBoard
+import frc.robot.commands.*
 import frc.robot.io.Inputs
-import frc.robot.io.Triggers
+import frc.robot.io.Limelight
+import frc.robot.io.PhysicalLimelight
 import frc.robot.subsystems.Drivetrain
 import frc.robot.subsystems.Intake
-import frc.robot.subsystems.physical.PhysicalDrivetrain
 import frc.robot.subsystems.Magazine
 import frc.robot.subsystems.Shooter
 import frc.robot.subsystems.dummy.DummyDrivetrain
 import frc.robot.subsystems.dummy.DummyIntake
 import frc.robot.subsystems.dummy.DummyMagazine
 import frc.robot.subsystems.dummy.DummyShooter
+import frc.robot.subsystems.physical.PhysicalDrivetrain
 import frc.robot.subsystems.physical.PhysicalIntake
 import frc.robot.subsystems.physical.PhysicalMagazine
 import frc.robot.subsystems.physical.PhysicalShooter
-import java.util.EnumMap
+import frc.robot.utils.CameraUtils
+import frc.robot.utils.InterpolatingQuantity
+import frc.robot.vision.Limelight2
+import systems.uom.common.USCustomary
+import tech.units.indriya.quantity.Quantities
+import java.util.*
 
 class RobotContainer {
-  private val drivetrainEnabled = true
-  private val intakeEnabled = true
-  private val magazineEnabled = true
-  private val shooterEnabled = true
+  private val networkTable = NetworkTableInstance.getDefault().getTable(javaClass.simpleName)
 
-  private val drivetrain: Drivetrain =
-    if (drivetrainEnabled) PhysicalDrivetrain(Constants.DRIVETRAIN_PROPERTIES) else DummyDrivetrain()
-  private val intake: Intake = if (intakeEnabled) PhysicalIntake(Constants.INTAKE_PROPERTIES) else DummyIntake()
-  private val magazine: Magazine =
-    if (magazineEnabled) PhysicalMagazine(Constants.MAGAZINE_PROPERTIES) else DummyMagazine()
-  private val shooter: Shooter = if (shooterEnabled) PhysicalShooter(Constants.SHOOTER_PROPERTIES) else DummyShooter()
+  // Temp
+  private val shooterTuningModeEntry = networkTable.getEntry("Set shooter tuning mode")
+  private val shooterSpeedEntry = networkTable.getEntry("Set shooter rpm")
 
-  private val controlBoard = ControlBoard()
+  private val limelight: Limelight = PhysicalLimelight(Constants.LIMELIGHT_TABLE_NAME)
 
-  private val inputMap: EnumMap<Inputs, () -> Number> = EnumMap(Inputs::class.java)
-  private val triggerMap: EnumMap<Triggers, Trigger> = EnumMap(Triggers::class.java)
+  private var drivetrain: Drivetrain =
+    if (Constants.DRIVETRAIN_ENABLED) PhysicalDrivetrain(Constants.DRIVETRAIN_PROPERTIES) else DummyDrivetrain()
+  private var intake: Intake =
+    if (Constants.INTAKE_ENABLED) PhysicalIntake(Constants.INTAKE_PROPERTIES) else DummyIntake()
+  private var magazine: Magazine =
+    if (Constants.MAGAZINE_ENABLED) PhysicalMagazine(Constants.MAGAZINE_PROPERTIES) else DummyMagazine()
+  private var shooter: Shooter =
+    if (Constants.SHOOTER_ENABLED) PhysicalShooter(Constants.SHOOTER_PROPERTIES) else DummyShooter()
 
   val autonomousCommand: Command? = null
 
   init {
-    inputMap[Inputs.MOVE] = { controlBoard.xboxController.leftY }
-    inputMap[Inputs.TURN] = { controlBoard.xboxController.rightX }
+//    shooterTuningModeEntry.addListener({ e: EntryNotification ->
+//      shooter.defaultCommand = if (e.value.boolean) Commands.runShooterAtSpeed(shooter) {
+//        Quantities.getQuantity(
+//          shooterSpeedEntry.getDouble(0.0), USCustomary.REVOLUTION_PER_MINUTE
+//        )
+//      } else null
+//    }, EntryListenerFlags.kUpdate)
 
-    drivetrain.defaultCommand =
-      ArcadeDriveCommand(
+    drivetrain.defaultCommand = arcadeDrive(drivetrain, Inputs::move, Inputs::turn)
+
+    Inputs.shiftLowGear.whenActive(shift(drivetrain, true))
+    Inputs.shiftHighGear.whenActive(shift(drivetrain, false))
+    Inputs.shift.whenActive(shift(drivetrain))
+    Inputs.extendIntake.whenActive(setIntakeExtended(intake, true))
+    Inputs.retractIntake.whenActive(setIntakeExtended(intake, false))
+    Inputs.toggleIntake.whenActive(toggleIntakeExtended(intake))
+    Inputs.runIntakeIn.whileActiveContinuous(runIntake(intake) { Constants.INTAKE_RUN_SPEED })
+    Inputs.runIntakeOut.whileActiveContinuous(runIntake(intake) { -Constants.INTAKE_RUN_SPEED })
+    Inputs.runMagazineIn.whileActiveContinuous(runMagazine(magazine) { Constants.MAGAZINE_RUN_SPEED })
+    Inputs.runMagazineOut.whileActiveContinuous(runMagazine(magazine) { -Constants.MAGAZINE_RUN_SPEED })
+    Inputs.runShooter.whileActiveContinuous(runShooter(shooter) { Constants.SHOOTER_RUN_SPEED })
+    Inputs.autoAim.whileActiveContinuous(
+      autoAim(
         drivetrain,
-        { inputMap[Inputs.MOVE]?.invoke()?.toDouble() ?: 0.0 },
-        { inputMap[Inputs.TURN]?.invoke()?.toDouble() ?: 0.0 })
+        { limelight.targetOffset?.x },
+        Constants.TARGET_OFFSET_TOLERANCE
+      )
+    )
+    Inputs.autoShootHigh.whileActiveContinuous(
+      aimAndShoot(
+        drivetrain,
+        magazine,
+        shooter,
+        { limelight.targetOffset?.x },
+        Constants.TARGET_OFFSET_TOLERANCE,
+        { Constants.MAGAZINE_RUN_SPEED },
+        {
+          CameraUtils.distance(
+            Constants.LIMELIGHT_MOUNT_ANGLE,
+            Constants.VISION_TARGET_HEIGHT,
+            limelight.targetOffset?.y
+          )?.let {
+            InterpolatingQuantity(it)
+          }?.let {
+            Constants.SHOOTER_MAP[it]?.value
+          }
+        },
+        Constants.SHOOTER_SPEED_TOLERANCE,
+        Constants.MAGAZINE_BACK_RUN_TIME
+      )
+    )
 
-    triggerMap[Triggers.TOGGLE_INTAKE_EXTENDED]?.whenActive(Commands.toggleIntakeExtended(intake))
-    triggerMap[Triggers.RUN_INTAKE]?.whileActiveContinuous(Commands.runIntake(intake) { Constants.INTAKE_RUN_SPEED })
-    triggerMap[Triggers.RUN_MAGAZINE]?.whileActiveContinuous(Commands.runMagazine(magazine) { Constants.MAGAZINE_RUN_SPEED })
+//    triggerMap[Triggers.AUTO_AIM]?.whileActiveContinuous(Commands.autoAim(drivetrain, { Limelight2.targetXOffset }))
+//    triggerMap[Triggers.SHOOT_LOW]?.whileActiveContinuous(
+//      Commands.shoot(
+//        magazine,
+//        shooter,
+//        { Constants.MAGAZINE_RUN_SPEED },
+//        {
+//          Constants.SHOOTER_MAP[InterpolatingQuantity(Constants.SHOOT_LOW_DISTANCE)]?.value ?: Quantities.getQuantity(
+//            0,
+//            USCustomary.REVOLUTION_PER_MINUTE
+//          )
+//        },
+//        Constants.SHOOTER_SPEED_TOLERANCE
+//      )
+//    )
+//    triggerMap[Triggers.SHOOT_HIGH]?.whileActiveContinuous(
+//      Commands.shoot(
+//        magazine,
+//        shooter,
+//        { Constants.MAGAZINE_RUN_SPEED },
+//        {
+//          Limelight2.getTargetDistance(Constants.LIMELIGHT_MOUNT_ANGLE, Constants.VISION_TARGET_HEIGHT)?.let {
+//            Constants.SHOOTER_MAP[InterpolatingQuantity(it)]?.value
+//          }
+//        },
+//        Constants.SHOOTER_SPEED_TOLERANCE
+//      )
+//    )
   }
 }

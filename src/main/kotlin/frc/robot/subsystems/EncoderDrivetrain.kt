@@ -12,7 +12,8 @@ interface EncoderDrivetrain : SimpleDrivetrain {
   val velocity: Quantity<Speed>
   val angularVelocity: Quantity<AngularSpeed>
 
-  fun velocityArcadeDrive(xSpeed: Quantity<Speed>, zRotation: Quantity<AngularSpeed>)
+  fun velocityArcadeDrive(speed: Quantity<Speed>, angularSpeed: Quantity<AngularSpeed>)
+
   fun velocityArcadeDrive(
     xSpeed: Quantity<Speed>,
     zRotation: Quantity<AngularSpeed>,
