@@ -12,7 +12,7 @@ import edu.wpi.first.wpilibj.DoubleSolenoid.Value
 import edu.wpi.first.wpilibj.Encoder
 import edu.wpi.first.wpilibj.PneumaticsModuleType
 import frc.robot.subsystems.Drivetrain
-import frc.robot.utils.FeedforwardData
+import frc.robot.utils.SimpleMotorFeedforwardConstants
 import frc.robot.utils.VariableSlewRateLimiter
 import si.uom.SI
 import si.uom.quantity.AngularAcceleration
@@ -37,8 +37,8 @@ class PhysicalDrivetrain(private val properties: Properties) : Drivetrain {
     val shiftForwardChannel: Int,
     val shiftReverseChannel: Int,
     val shiftLowGearValue: Value,
-    val driveLeftFeedforwardData: FeedforwardData,
-    val driveRightFeedforwardData: FeedforwardData,
+    val driveLeftFeedforwardData: SimpleMotorFeedforwardConstants,
+    val driveRightFeedforwardData: SimpleMotorFeedforwardConstants,
     val driveEncoderDistancePerPulse: Quantity<Length>,
     val trackWidth: Quantity<Length>
   ) {
@@ -84,6 +84,11 @@ class PhysicalDrivetrain(private val properties: Properties) : Drivetrain {
     driveFrontRight.configFactoryDefault()
     driveBackLeft.configFactoryDefault()
     driveBackRight.configFactoryDefault()
+
+    driveFrontLeft.enableVoltageCompensation(true)
+    driveFrontRight.enableVoltageCompensation(true)
+    driveBackLeft.enableVoltageCompensation(true)
+    driveBackRight.enableVoltageCompensation(true)
 
     driveBackLeft.follow(driveFrontLeft)
     driveBackRight.follow(driveFrontRight)
@@ -146,11 +151,11 @@ class PhysicalDrivetrain(private val properties: Properties) : Drivetrain {
     arcadeDrive(newMove, newTurn)
   }
 
-  override fun velocityArcadeDrive(xSpeed: Quantity<Speed>, zRotation: Quantity<AngularSpeed>) {
+  override fun velocityArcadeDrive(speed: Quantity<Speed>, angularSpeed: Quantity<AngularSpeed>) {
     val chassisSpeeds = ChassisSpeeds(
-      xSpeed.to(SI.METRE_PER_SECOND).value.toDouble(),
+      speed.to(SI.METRE_PER_SECOND).value.toDouble(),
       0.0,
-      zRotation.to(SI.RADIAN_PER_SECOND).value.toDouble()
+      angularSpeed.to(SI.RADIAN_PER_SECOND).value.toDouble()
     )
     val wheelSpeeds = kinematics.toWheelSpeeds(chassisSpeeds)
     val leftVoltageFF = driveLeftFeedforward.calculate(wheelSpeeds.leftMetersPerSecond)

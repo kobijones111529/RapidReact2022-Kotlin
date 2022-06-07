@@ -28,7 +28,7 @@ class DummyDrivetrain : Drivetrain {
 
   }
 
-  override fun velocityArcadeDrive(xSpeed: Quantity<Speed>, zRotation: Quantity<AngularSpeed>) {
+  override fun velocityArcadeDrive(speed: Quantity<Speed>, angularSpeed: Quantity<AngularSpeed>) {
 
   }
 

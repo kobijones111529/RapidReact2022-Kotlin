@@ -32,6 +32,9 @@ class PhysicalIntake(private val properties: Properties) : Intake {
     properties.extenderReverseChannel
   )
 
+  /**
+   * Update motor output
+   */
   private var motorOutput = {
     motor.set(ControlMode.PercentOutput, 0.0)
   }
@@ -42,6 +45,15 @@ class PhysicalIntake(private val properties: Properties) : Intake {
       extender.set(if (value) properties.extenderExtendedValue else properties.extenderRetractedValue)
     }
 
+  init {
+    motor.configFactoryDefault()
+
+    motor.enableVoltageCompensation(true)
+  }
+
+  /**
+   * Set motor output
+   */
   override fun setOutput(output: Double) {
     motorOutput = {
       motor.set(ControlMode.PercentOutput, output)
