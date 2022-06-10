@@ -10,5 +10,5 @@ import javax.measure.Quantity
  * Run the shooter
  */
 fun runShooter(shooter: Shooter, speed: () -> Double): Command {
-  return FunctionalCommand({ }, { shooter.setOutput(speed()) }, { shooter.setOutput(0.0) }, { false }, shooter)
+    return FunctionalCommand({ }, { shooter.setOutput(speed()) }, { shooter.setOutput(0.0) }, { false }, shooter)
 }

@@ -5,9 +5,9 @@ import edu.wpi.first.wpilibj2.command.InstantCommand
 import frc.robot.subsystems.Drivetrain
 
 fun shift(drivetrain: Drivetrain): Command {
-  return InstantCommand({ drivetrain.lowGear = !drivetrain.lowGear }, drivetrain)
+    return InstantCommand({ drivetrain.lowGear = !drivetrain.lowGear }, drivetrain)
 }
 
 fun shift(drivetrain: Drivetrain, wantsLowGear: Boolean): Command {
-  return InstantCommand({ drivetrain.lowGear = wantsLowGear }, drivetrain)
+    return InstantCommand({ drivetrain.lowGear = wantsLowGear }, drivetrain)
 }

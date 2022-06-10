@@ -10,11 +10,11 @@ import javax.measure.Quantity
  * Run the shooter using velocity control
  */
 fun runShooterAtSpeed(shooter: Shooter, speed: () -> Quantity<AngularSpeed>?): Command {
-  return FunctionalCommand(
-    { },
-    { speed()?.let { shooter.setSpeed(it) } },
-    { shooter.setOutput(0.0) },
-    { false },
-    shooter
-  )
+    return FunctionalCommand(
+        { },
+        { speed()?.let { shooter.setSpeed(it) } },
+        { shooter.setOutput(0.0) },
+        { false },
+        shooter
+    )
 }

@@ -8,5 +8,5 @@ import frc.robot.subsystems.Intake
  * Run the intake
  */
 fun runIntake(intake: Intake, speed: () -> Double): Command {
-  return FunctionalCommand({ }, { intake.setOutput(speed()) }, { intake.setOutput(0.0) }, { false }, intake)
+    return FunctionalCommand({ }, { intake.setOutput(speed()) }, { intake.setOutput(0.0) }, { false }, intake)
 }

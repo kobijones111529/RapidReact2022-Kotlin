@@ -11,16 +11,16 @@ import si.uom.quantity.AngularSpeed
 import javax.measure.Quantity
 
 fun shoot(
-  magazine: Magazine,
-  shooter: Shooter,
-  magazineSpeed: () -> Double,
-  shootSpeed: () -> Quantity<AngularSpeed>?,
-  tolerance: Quantity<AngularSpeed>,
-  backRunMagazineTime: Double
+    magazine: Magazine,
+    shooter: Shooter,
+    magazineSpeed: () -> Double,
+    shootSpeed: () -> Quantity<AngularSpeed>?,
+    tolerance: Quantity<AngularSpeed>,
+    backRunMagazineTime: Double
 ): Command {
-  val canShoot = { shootSpeed()?.let { diff(it, shooter.speed) <= tolerance } ?: false }
-  val backRunMagazine = runMagazine(magazine) { -magazineSpeed() }.withTimeout(backRunMagazineTime)
-  return runShooterAtSpeed(shooter, shootSpeed).alongWith(
-    runMagazine(magazine, magazineSpeed).onlyWhen(canShoot).andThen(backRunMagazine).repeatedly()
-  )
+    val canShoot = { shootSpeed()?.let { diff(it, shooter.speed) <= tolerance } ?: false }
+    val backRunMagazine = runMagazine(magazine) { -magazineSpeed() }.withTimeout(backRunMagazineTime)
+    return runShooterAtSpeed(shooter, shootSpeed).alongWith(
+        runMagazine(magazine, magazineSpeed).onlyWhen(canShoot).andThen(backRunMagazine).repeatedly()
+    )
 }

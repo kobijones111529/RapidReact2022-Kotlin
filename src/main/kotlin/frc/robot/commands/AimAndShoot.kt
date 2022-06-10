@@ -15,26 +15,26 @@ import javax.measure.Quantity
 import javax.measure.quantity.Angle
 
 fun aimAndShoot(
-  drivetrain: Drivetrain,
-  magazine: Magazine,
-  shooter: Shooter,
-  targetOffset: () -> Quantity<Angle>?,
-  targetOffsetTolerance: Quantity<Angle>,
-  magazineSpeed: () -> Double,
-  shootSpeed: () -> Quantity<AngularSpeed>?,
-  shootSpeedTolerance: Quantity<AngularSpeed>,
-  backRunMagazineTime: Double
+    drivetrain: Drivetrain,
+    magazine: Magazine,
+    shooter: Shooter,
+    targetOffset: () -> Quantity<Angle>?,
+    targetOffsetTolerance: Quantity<Angle>,
+    magazineSpeed: () -> Double,
+    shootSpeed: () -> Quantity<AngularSpeed>?,
+    shootSpeedTolerance: Quantity<AngularSpeed>,
+    backRunMagazineTime: Double
 ): Command {
-  val canShoot =
-    { targetOffset()?.let { diff(it, Quantities.getQuantity(0, SI.RADIAN)) < targetOffsetTolerance } ?: false }
-  return autoAim(drivetrain, targetOffset, targetOffsetTolerance).alongWith(
-    shoot(
-      magazine,
-      shooter,
-      magazineSpeed,
-      shootSpeed,
-      shootSpeedTolerance,
-      backRunMagazineTime
-    ).onlyWhen(canShoot).repeatedly()
-  )
+    val canShoot =
+        { targetOffset()?.let { diff(it, Quantities.getQuantity(0, SI.RADIAN)) < targetOffsetTolerance } ?: false }
+    return autoAim(drivetrain, targetOffset, targetOffsetTolerance).alongWith(
+        shoot(
+            magazine,
+            shooter,
+            magazineSpeed,
+            shootSpeed,
+            shootSpeedTolerance,
+            backRunMagazineTime
+        ).onlyWhen(canShoot).repeatedly()
+    )
 }

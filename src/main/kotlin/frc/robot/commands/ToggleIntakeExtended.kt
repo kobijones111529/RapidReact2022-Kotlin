@@ -8,5 +8,5 @@ import frc.robot.subsystems.Intake
  * Toggle extended/retracted state of the intake
  */
 fun toggleIntakeExtended(intake: Intake): Command {
-  return InstantCommand({ intake.extended = !intake.extended }, intake)
+    return InstantCommand({ intake.extended = !intake.extended }, intake)
 }

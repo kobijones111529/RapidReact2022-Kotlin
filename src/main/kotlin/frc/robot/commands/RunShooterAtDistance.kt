@@ -11,25 +11,25 @@ import javax.measure.Quantity
 import javax.measure.quantity.Length
 
 fun runShooterAtDistance(shooter: Shooter, distance: () -> Quantity<Length>): Command {
-  return RunShooterAtDistance(shooter, distance)
+    return RunShooterAtDistance(shooter, distance)
 }
 
 private class RunShooterAtDistance(private val shooter: Shooter, private val distance: () -> Quantity<Length>) :
-  CommandBase() {
-  init {
-    addRequirements(shooter)
-  }
+    CommandBase() {
+    init {
+        addRequirements(shooter)
+    }
 
-  override fun execute() {
-    shooter.setSpeed(
-      Constants.SHOOTER_MAP[InterpolatingQuantity(distance())]?.value ?: Quantities.getQuantity(
-        0,
-        USCustomary.REVOLUTION_PER_MINUTE
-      )
-    )
-  }
+    override fun execute() {
+        shooter.setSpeed(
+            Constants.SHOOTER_MAP[InterpolatingQuantity(distance())]?.value ?: Quantities.getQuantity(
+                0,
+                USCustomary.REVOLUTION_PER_MINUTE
+            )
+        )
+    }
 
-  override fun end(interrupted: Boolean) {
-    shooter.setSpeed(Quantities.getQuantity(0, USCustomary.REVOLUTION_PER_MINUTE))
-  }
+    override fun end(interrupted: Boolean) {
+        shooter.setSpeed(Quantities.getQuantity(0, USCustomary.REVOLUTION_PER_MINUTE))
+    }
 }

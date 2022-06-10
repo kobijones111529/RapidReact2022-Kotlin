@@ -8,5 +8,5 @@ import frc.robot.subsystems.Magazine
  * Run the magazine
  */
 fun runMagazine(magazine: Magazine, speed: () -> Double): Command {
-  return FunctionalCommand({ }, { magazine.setOutput(speed()) }, { magazine.setOutput(0.0) }, { false }, magazine)
+    return FunctionalCommand({ }, { magazine.setOutput(speed()) }, { magazine.setOutput(0.0) }, { false }, magazine)
 }
