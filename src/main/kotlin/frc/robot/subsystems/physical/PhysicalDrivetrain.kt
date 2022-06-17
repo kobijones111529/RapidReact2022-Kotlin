@@ -2,7 +2,8 @@ package frc.robot.subsystems.physical
 
 import com.ctre.phoenix.motorcontrol.ControlMode
 import com.ctre.phoenix.motorcontrol.InvertType
-import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX
+import com.ctre.phoenix.motorcontrol.can.TalonFXConfiguration
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX
 import edu.wpi.first.math.controller.SimpleMotorFeedforward
 import edu.wpi.first.math.kinematics.ChassisSpeeds
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics
@@ -52,10 +53,10 @@ class PhysicalDrivetrain(private val properties: Properties) : Drivetrain {
             }
     }
 
-    private val driveFrontLeft = WPI_TalonSRX(properties.driveFrontLeftID)
-    private val driveFrontRight = WPI_TalonSRX(properties.driveFrontRightID)
-    private val driveBackLeft = WPI_TalonSRX(properties.driveBackLeftID)
-    private val driveBackRight = WPI_TalonSRX(properties.driveBackRightID)
+    private val driveFrontLeft = WPI_TalonFX(properties.driveFrontLeftID)
+    private val driveFrontRight = WPI_TalonFX(properties.driveFrontRightID)
+    private val driveBackLeft = WPI_TalonFX(properties.driveBackLeftID)
+    private val driveBackRight = WPI_TalonFX(properties.driveBackRightID)
 
     private val driveLeftEncoder = Encoder(properties.driveLeftEncoderChannelA, properties.driveLeftEncoderChannelB)
     private val driveRightEncoder = Encoder(properties.driveRightEncoderChannelA, properties.driveRightEncoderChannelB)
@@ -80,21 +81,18 @@ class PhysicalDrivetrain(private val properties: Properties) : Drivetrain {
         )
 
     init {
-        driveFrontLeft.configFactoryDefault()
-        driveFrontRight.configFactoryDefault()
-        driveBackLeft.configFactoryDefault()
-        driveBackRight.configFactoryDefault()
+        val allMotorConfig = TalonFXConfiguration()
 
-        driveFrontLeft.enableVoltageCompensation(true)
-        driveFrontRight.enableVoltageCompensation(true)
-        driveBackLeft.enableVoltageCompensation(true)
-        driveBackRight.enableVoltageCompensation(true)
+        driveFrontLeft.configAllSettings(allMotorConfig)
+        driveFrontRight.configAllSettings(allMotorConfig)
+        driveBackLeft.configAllSettings(allMotorConfig)
+        driveBackRight.configAllSettings(allMotorConfig)
 
         driveBackLeft.follow(driveFrontLeft)
         driveBackRight.follow(driveFrontRight)
 
         driveFrontLeft.setInverted(InvertType.None)
-        driveFrontRight.setInverted(InvertType.None)
+        driveFrontRight.setInverted(InvertType.InvertMotorOutput)
         driveBackLeft.setInverted(InvertType.FollowMaster)
         driveBackRight.setInverted(InvertType.FollowMaster)
 
@@ -102,24 +100,24 @@ class PhysicalDrivetrain(private val properties: Properties) : Drivetrain {
         driveRightEncoder.distancePerPulse = properties.driveEncoderDistancePerPulse.to(SI.METRE).value.toDouble()
     }
 
-    override val leftVelocity: Quantity<Speed>
+    override val leftSpeed: Quantity<Speed>
         get() = Quantities.getQuantity(driveLeftEncoder.rate, SI.METRE_PER_SECOND)
-    override val rightVelocity: Quantity<Speed>
+    override val rightSpeed: Quantity<Speed>
         get() = Quantities.getQuantity(driveRightEncoder.rate, SI.METRE_PER_SECOND)
-    override val velocity: Quantity<Speed>
+    override val speed: Quantity<Speed>
         get() {
             val wheelSpeeds = DifferentialDriveWheelSpeeds(
-                leftVelocity.to(SI.METRE_PER_SECOND).value.toDouble(),
-                rightVelocity.to(SI.METRE_PER_SECOND).value.toDouble()
+                leftSpeed.to(SI.METRE_PER_SECOND).value.toDouble(),
+                rightSpeed.to(SI.METRE_PER_SECOND).value.toDouble()
             )
             val chassisSpeeds = kinematics.toChassisSpeeds(wheelSpeeds)
             return Quantities.getQuantity(chassisSpeeds.vxMetersPerSecond, SI.METRE_PER_SECOND)
         }
-    override val angularVelocity: Quantity<AngularSpeed>
+    override val angularSpeed: Quantity<AngularSpeed>
         get() {
             val wheelSpeeds = DifferentialDriveWheelSpeeds(
-                leftVelocity.to(SI.METRE_PER_SECOND).value.toDouble(),
-                rightVelocity.to(SI.METRE_PER_SECOND).value.toDouble()
+                leftSpeed.to(SI.METRE_PER_SECOND).value.toDouble(),
+                rightSpeed.to(SI.METRE_PER_SECOND).value.toDouble()
             )
             val chassisSpeeds = kinematics.toChassisSpeeds(wheelSpeeds)
             return Quantities.getQuantity(chassisSpeeds.omegaRadiansPerSecond, SI.RADIAN_PER_SECOND)
@@ -134,8 +132,15 @@ class PhysicalDrivetrain(private val properties: Properties) : Drivetrain {
     private val angularAccelerationLimiter = VariableSlewRateLimiter()
 
     private var driveOutput = {
-        driveFrontLeft.set(0.0)
-        driveFrontRight.set(0.0)
+        driveFrontLeft.set(ControlMode.Disabled, 0.0)
+        driveFrontRight.set(ControlMode.Disabled, 0.0)
+    }
+
+    override fun neutralOutput() {
+        driveOutput = {
+            driveFrontLeft.set(ControlMode.Disabled, 0.0)
+            driveFrontRight.set(ControlMode.Disabled, 0.0)
+        }
     }
 
     override fun arcadeDrive(move: Double, turn: Double) {
@@ -167,22 +172,22 @@ class PhysicalDrivetrain(private val properties: Properties) : Drivetrain {
     }
 
     override fun velocityArcadeDrive(
-        xSpeed: Quantity<Speed>,
-        zRotation: Quantity<AngularSpeed>,
+        speed: Quantity<Speed>,
+        angularSpeed: Quantity<AngularSpeed>,
         accelerationLimit: Quantity<Acceleration>,
         angularAccelerationLimit: Quantity<AngularAcceleration>
     ) {
-        val newXSpeed = accelerationLimiter.calculate(
-            xSpeed.to(SI.METRE_PER_SECOND).value.toDouble(),
+        val newSpeed = accelerationLimiter.calculate(
+            speed.to(SI.METRE_PER_SECOND).value.toDouble(),
             accelerationLimit.to(SI.METRE_PER_SQUARE_SECOND).value.toDouble()
         )
-        val newZRotation = angularAccelerationLimiter.calculate(
-            zRotation.to(SI.RADIAN_PER_SECOND).value.toDouble(),
+        val newAngularSpeed = angularAccelerationLimiter.calculate(
+            angularSpeed.to(SI.RADIAN_PER_SECOND).value.toDouble(),
             angularAccelerationLimit.to(SI.RADIAN_PER_SQUARE_SECOND).value.toDouble()
         )
         velocityArcadeDrive(
-            Quantities.getQuantity(newXSpeed, SI.METRE_PER_SECOND),
-            Quantities.getQuantity(newZRotation, SI.RADIAN_PER_SECOND)
+            Quantities.getQuantity(newSpeed, SI.METRE_PER_SECOND),
+            Quantities.getQuantity(newAngularSpeed, SI.RADIAN_PER_SECOND)
         )
     }
 

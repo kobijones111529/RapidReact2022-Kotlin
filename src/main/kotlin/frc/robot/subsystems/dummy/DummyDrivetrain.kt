@@ -10,13 +10,13 @@ import javax.measure.quantity.Acceleration
 import javax.measure.quantity.Speed
 
 class DummyDrivetrain : Drivetrain {
-    override val leftVelocity: Quantity<Speed>
+    override val leftSpeed: Quantity<Speed>
         get() = Quantities.getQuantity(0, SI.METRE_PER_SECOND)
-    override val rightVelocity: Quantity<Speed>
+    override val rightSpeed: Quantity<Speed>
         get() = Quantities.getQuantity(0, SI.METRE_PER_SECOND)
-    override val velocity: Quantity<Speed>
+    override val speed: Quantity<Speed>
         get() = Quantities.getQuantity(0, SI.METRE_PER_SECOND)
-    override val angularVelocity: Quantity<AngularSpeed>
+    override val angularSpeed: Quantity<AngularSpeed>
         get() = Quantities.getQuantity(0, SI.RADIAN_PER_SECOND)
     override var lowGear: Boolean = false
 
@@ -33,8 +33,8 @@ class DummyDrivetrain : Drivetrain {
     }
 
     override fun velocityArcadeDrive(
-        xSpeed: Quantity<Speed>,
-        zRotation: Quantity<AngularSpeed>,
+        speed: Quantity<Speed>,
+        angularSpeed: Quantity<AngularSpeed>,
         accelerationLimit: Quantity<Acceleration>,
         angularAccelerationLimit: Quantity<AngularAcceleration>
     ) {

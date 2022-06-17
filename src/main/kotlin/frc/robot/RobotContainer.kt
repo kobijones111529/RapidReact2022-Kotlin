@@ -20,6 +20,7 @@ import frc.robot.subsystems.physical.PhysicalMagazine
 import frc.robot.subsystems.physical.PhysicalShooter
 import frc.robot.utils.CameraUtils
 import frc.robot.utils.InterpolatingQuantity
+import java.util.function.Supplier
 
 class RobotContainer {
     private val networkTable = NetworkTableInstance.getDefault().getTable(javaClass.simpleName)
