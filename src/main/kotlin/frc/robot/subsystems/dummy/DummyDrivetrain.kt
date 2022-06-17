@@ -20,24 +20,15 @@ class DummyDrivetrain : Drivetrain {
         get() = Quantities.getQuantity(0, SI.RADIAN_PER_SECOND)
     override var lowGear: Boolean = false
 
-    override fun arcadeDrive(move: Double, turn: Double) {
-
-    }
-
-    override fun arcadeDrive(move: Double, turn: Double, moveRateLimit: Double, turnRateLimit: Double) {
-
-    }
-
-    override fun velocityArcadeDrive(speed: Quantity<Speed>, angularSpeed: Quantity<AngularSpeed>) {
-
-    }
-
+    override fun neutralOutput() {}
+    override fun arcadeDrive(move: Double, turn: Double) {}
+    override fun arcadeDrive(move: Double, turn: Double, moveRateLimit: Double, turnRateLimit: Double) {}
+    override fun velocityArcadeDrive(speed: Quantity<Speed>, angularSpeed: Quantity<AngularSpeed>) {}
     override fun velocityArcadeDrive(
         speed: Quantity<Speed>,
         angularSpeed: Quantity<AngularSpeed>,
         accelerationLimit: Quantity<Acceleration>,
         angularAccelerationLimit: Quantity<AngularAcceleration>
     ) {
-
     }
 }
